@@ -9,7 +9,7 @@ app.use(express.json());
 // the callback function takes two arguments: req and res. req is the request object that contains information about the request, 
 // and res is the response object that we can use to send a response back to the client.
 app.get("/", (req, res) => {
-  res.send("Hello World!");
+  res.send("Hello me!");
 });
 
 app.listen(port, () => {
@@ -46,6 +46,18 @@ const users = {
   ],
 };
 
+
+const findUserByName = (name) => {
+  return users["users_list"].filter((user) => user["name"] === name);
+};
+
 app.get("/users", (req, res) => {
-  res.send(users);
+  const name = req.query.name;
+  if (name != undefined) {
+    let result = findUserByName(name);
+    result = { users_list: result };
+    res.send(result);
+  } else {
+    res.send(users);
+  }
 });
