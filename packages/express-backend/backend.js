@@ -1,9 +1,12 @@
 import express from "express";
+import cors from "cors";
 
 const app = express();
 const port = 8000;
 
+app.use(cors());
 app.use(express.json());
+
 
 // / is the url pattern that this eendpoint matches. the second argument is the callback function that will be called when a request is made to this endpoint. 
 // the callback function takes two arguments: req and res. req is the request object that contains information about the request, 
