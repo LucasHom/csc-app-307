@@ -24,19 +24,28 @@ const characters = [
 function MyApp() {
   const [characters, setCharacters] = useState([]);
 
-  function removeOneCharacter(index) {
-    const updated = characters.filter((character, i) => {
-      return i !== index;
-    });
-    setCharacters(updated);
+  function removeOneCharacter(id) {
+    deleteUser(id)
+      .then((res) => {
+        if (res.status === 204) {
+          const updated = characters.filter((character) => character.id !== id);
+          setCharacters(updated);
+        }
+      })
+      .catch((error) => {
+        console.log(error);
+      });
   }
 
   function updateList(person) {
     postUser(person)
       .then((res) => {
         if (res.status === 201) {
-          setCharacters([...characters, person]);
+          return res.json()
         }
+      })
+      .then((newUser) => { // newUser is the response from the backend, which includes the generated id also the return res.json()
+        setCharacters([...characters, newUser]); // newUser has the id yay
       })
       .catch((error) => {
         console.log(error);
@@ -56,6 +65,14 @@ function MyApp() {
         "Content-Type": "application/json",
       },
       body: JSON.stringify(person),
+    });
+
+    return promise;
+  }
+
+  function deleteUser(id) {
+    const promise = fetch(`http://localhost:8000/users/${id}`, {
+      method: "DELETE",
     });
 
     return promise;

@@ -49,6 +49,11 @@ const users = {
   ],
 };
 
+// id generation function
+const generateId = () => {
+  return Math.random().toString(36).substring(2, 8);
+}
+
 
 const findUserByName = (name) => {
   return users["users_list"].filter((user) => user["name"] === name);
@@ -97,7 +102,7 @@ const addUser = (user) => {
 };
 
 app.post("/users", (req, res) => {
-  const userToAdd = req.body;
+  const userToAdd = { id: generateId(), ...req.body };
   addUser(userToAdd);
   res.status(201).send(userToAdd);
 });
@@ -114,9 +119,13 @@ const deleteUserById = (id) => {
 
 app.delete("/users/:id", (req, res) => {
   const id = req.params["id"];
-  const deletedUser = deleteUserById(id);
+  const index = users["users_list"].findIndex((user) => user.id === id);
 
-  res.send({
-    deletedUser
-  });
-})
+  if (index === -1) {
+    res.status(404).send("user not found");
+  } 
+  else {
+    const deletedUser = deleteUserById(id);
+    res.status(204).send(deletedUser);
+  }
+});
