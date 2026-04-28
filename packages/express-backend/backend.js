@@ -1,5 +1,17 @@
 import express from "express";
 import cors from "cors";
+import userService from "./services/user-service.js";
+import dotenv from "dotenv";
+import mongoose from "mongoose";
+
+dotenv.config();
+
+// const { MONGO_CONNECTION_STRING } = process.env;
+
+// mongoose.set("debug", true);
+// mongoose
+//   .connect(MONGO_CONNECTION_STRING + "users") // connect to Db "users"
+//   .catch((error) => console.log(error));
 
 const app = express();
 const port = 8000;
@@ -7,10 +19,6 @@ const port = 8000;
 app.use(cors());
 app.use(express.json());
 
-
-// / is the url pattern that this eendpoint matches. the second argument is the callback function that will be called when a request is made to this endpoint. 
-// the callback function takes two arguments: req and res. req is the request object that contains information about the request, 
-// and res is the response object that we can use to send a response back to the client.
 app.get("/", (req, res) => {
   res.send("Hello me!");
 });
@@ -19,113 +27,47 @@ app.listen(port, () => {
   console.log(`Example app listening at http://localhost:${port}`);
 });
 
-const users = {
-  users_list: [
-    {
-      id: "xyz789",
-      name: "Charlie",
-      job: "Janitor",
-    },
-    {
-      id: "abc123",
-      name: "Mac",
-      job: "Bouncer",
-    },
-    {
-      id: "ppp222",
-      name: "Mac",
-      job: "Professor",
-    },
-    {
-      id: "yat999",
-      name: "Dee",
-      job: "Aspring actress",
-    },
-    {
-      id: "zap555",
-      name: "Dennis",
-      job: "Bartender",
-    },
-  ],
-};
-
-// id generation function
-const generateId = () => {
-  return Math.random().toString(36).substring(2, 8);
-}
-
-
-const findUserByName = (name) => {
-  return users["users_list"].filter((user) => user["name"] === name);
-};
-
-const findUserByJob = (job) => {
-  return users["users_list"].filter((user) => user["job"] === job);
-};
-
-// edited for name and job
+// GET all users
 app.get("/users", (req, res) => {
   const name = req.query.name;
   const job = req.query.job;
 
-  if (name != undefined) {
-    let result = findUserByName(name);
-    result = { users_list: result };
-    res.send(result);
-  } 
-  else if (job != undefined) {
-    let result = findUserByJob(job);
-    result = { users_list: result };
-    res.send(result);
-  } 
-  else {
-    res.send(users);
-  }
+  userService
+    .getUsers(name, job)
+    .then((users) => res.send({ users_list: users }))
+    .catch((err) => res.status(500).send(err));
 });
 
-const findUserById = (id) =>
-  users["users_list"].find((user) => user["id"] === id);
-
+// GET user by id
 app.get("/users/:id", (req, res) => {
-  const id = req.params["id"]; //or req.params.id
-  let result = findUserById(id);
-  if (result === undefined) {
-    res.status(404).send("Resource not found.");
-  } else {
-    res.send(result);
-  }
+  const id = req.params.id;
+
+  userService
+    .findUserById(id)
+    .then((user) => {
+      if (user) res.send(user);
+      else res.status(404).send("Resource not found.");
+    })
+    .catch((err) => res.status(500).send(err));
 });
 
-const addUser = (user) => {
-  users["users_list"].push(user);
-  return user;
-};
-
+// POST new user
 app.post("/users", (req, res) => {
-  const userToAdd = { id: generateId(), ...req.body };
-  addUser(userToAdd);
-  res.status(201).send(userToAdd);
+  userService
+    .addUser(req.body)
+    .then((user) => res.status(201).send(user))
+    .catch((err) => res.status(500).send(err));
 });
 
-
-const deleteUserById = (id) => {
-  const index = users["users_list"].findIndex(
-    (user) => user.id === id
-  );
-
-  const deletedUser = users["users_list"].splice(index, 1);
-  return deletedUser;
-};
-
+// DELETE user by id
 app.delete("/users/:id", (req, res) => {
-  const id = req.params["id"];
-  const index = users["users_list"].findIndex((user) => user.id === id);
+  const id = req.params.id;
 
-  if (index === -1) {
-    res.status(404).send("user not found");
-  } 
-  else {
-    const deletedUser = deleteUserById(id);
-    res.status(204).send(deletedUser);
-  }
+  userService
+    .removeUser(id)
+    .then((deletedUser) => {
+      if (deletedUser) res.status(204).send(deletedUser);
+      else res.status(404).send("User not found.");
+    })
+    .catch((err) => res.status(500).send(err));
 });
